@@ -2,17 +2,15 @@
   "images" : [
     {
       "idiom" : "universal",
-      "filename" : "strong-women-816x460.jpg",
+      "filename" : "brain.png",
       "scale" : "1x"
     },
     {
       "idiom" : "universal",
-      "filename" : "strong-women-816x460-1.jpg",
       "scale" : "2x"
     },
     {
       "idiom" : "universal",
-      "filename" : "strong-women-816x460-2.jpg",
       "scale" : "3x"
     }
   ],

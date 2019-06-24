@@ -12,9 +12,24 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
+    var triviaModel = TriviaDataManager()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        
+        guard let tabBarController = window?.rootViewController as? UITabBarController,
+            let viewControllers = tabBarController.viewControllers else {
+                return true
+        }
+        
+        for (index, viewController) in viewControllers.enumerated() {
+            if let baseController = viewController as? TriviaViewController {
+                baseController.triviaModel = self.triviaModel
+            }
+            if let baseController = viewController as? SettingsViewController {
+                baseController.triviaModel = self.triviaModel
+            }
+            
+        }
         // Override point for customization after application launch.
         return true
     }

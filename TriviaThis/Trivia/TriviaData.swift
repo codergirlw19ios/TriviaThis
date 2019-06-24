@@ -9,6 +9,19 @@
 import Foundation
 import UIKit
 
+
+struct Category {
+    let id: Int
+    let category: String
+    
+    init(_ id: Int, _ category: String) {
+        self.id = id
+        self.category = category
+     }
+}
+// This structure holds 1 answer, and whether or not it is the correct answer ( t/f)
+// If the user selects this answer as the "correct" answer - we set checked to true
+// We keep a randomized array of all of the answers for each question
 struct TriviaAnswer {
     let answer: String   // either correct or incorrect Answer
     var checked: Bool    // should it be checked
@@ -37,7 +50,7 @@ class TriviaData {
         self.type = result.type
         self.level = result.level
         self.question = result.question.removingPercentEncoding ?? ""
-        self.correct = result.correct
+        self.correct = result.correct.removingPercentEncoding ?? ""
         self.incorrect = result.incorrect
         self.randomizedAnswers = doRandomization()
     }
@@ -48,7 +61,7 @@ class TriviaData {
         triviaAnswer.append(TriviaAnswer(answer: correct, checked: false, isCorrect: true))
         
         for wrongAnswer in incorrect {
-            triviaAnswer.append(TriviaAnswer(answer: wrongAnswer, checked: false, isCorrect: false))
+             triviaAnswer.append(TriviaAnswer(answer: wrongAnswer.removingPercentEncoding ?? "", checked: false, isCorrect: false))
         }
        
         return triviaAnswer.shuffled()

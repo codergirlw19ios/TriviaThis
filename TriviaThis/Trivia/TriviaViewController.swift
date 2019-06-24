@@ -10,34 +10,41 @@ import UIKit
 
 class TriviaViewController: UIViewController {
 
+    var triviaModel:  TriviaDataManager?
     
+    @IBOutlet weak var incorrectCountLabel: UILabel!
+    @IBOutlet weak var correctCountLabel: UILabel!
     @IBOutlet weak var questionLabel: UILabel!
     @IBOutlet weak var triviaTableView: UITableView!
     
-    private let triviaNetwork = TriviaNetwork()
-    let triviaQuery = TriviaQuery(query: "", amount: 10, category: "", difficulty: "", type: "")
-    var triviaDataList = [TriviaData]() {
-        didSet {
-            // notify whoever is listening that we added data to this object
-     //       self.delegate?.dataUpdated()
-            questionLabel.text = getQuestion(index: 0)?.question
-            triviaTableView.reloadData()
-        }
-    }
-    
+ 
+    // There are 10 questions fetched each time.  Do we get new data or do we iterate to next question?
     @IBAction func getTriviaQuestion(_ sender: Any) {
     
-        // call with triviaQuery so the correct verions of fetch is called
-        triviaNetwork.fetch(with: triviaQuery){
-            optionalTriviaArray in
-            self.triviaDataList = optionalTriviaArray ?? [TriviaData]()
+        guard triviaModel != nil else {
+            return
         }
+        // Do we need to fetch new data or just iterate the list??
+        if (triviaModel!.triviaDataList.count == 0) || (triviaModel!.questionIndex >= triviaModel!.triviaDataList.count) || triviaModel!.forceFetch == true {
+            // call with triviaQuery so the correct verions of fetch is called
+            triviaModel?.triviaNetwork.fetch(with: (triviaModel?.triviaQuery)!){
+                optionalTriviaArray in
+                self.triviaModel?.triviaDataList = optionalTriviaArray ?? [TriviaData]()
+            }
+            // reset the questionIndex
+            triviaModel?.questionIndex = 0
+            // reset the forceFetch
+            triviaModel?.forceFetch = false
+        } else {  // data is there -- go to next index
+            triviaModel?.questionIndex += 1
+        }
+        
+        triviaModel?.firstGuess = true
     }
     
     @IBAction func submitAnswerTapped(_ sender: Any) {
         
-        isAnswerCorrect(triviaData: triviaDataList[0])
-        
+        updateCounters()
     }
     
     override func viewDidLoad() {
@@ -46,81 +53,73 @@ class TriviaViewController: UIViewController {
         self.navigationItem.title = "Trivia This!"
         triviaTableView.dataSource = self
         triviaTableView.delegate = self
+        // MARK TriviaDataManagers delegate listener is the TriviaViewController
+        triviaModel?.delegate = self
+        correctCountLabel.text = triviaModel?.getCorrectCount()
+        incorrectCountLabel.text = triviaModel?.getIncorrectCount()
     }
     
-    func getQuestion(index: Int) -> TriviaData? {
+    // If this is the first guess for this question, then update the counters
+    // else, let the user guess and be told which is correct/incorrect without counting
+    func updateCounters() {
         
-        if index >= 0 && index < triviaDataList.count {
-            return triviaDataList[index]
-        } else {
-            return nil
-        }
-    }
-    
-    func getCorrectAnswer(triviaData: TriviaData) -> String {
-            return triviaData.correct
-    }
-    
-    func getInCorrectAnswers(triviaData: TriviaData) -> [String] {
-        return triviaData.incorrect
-    }
-    
-    func getRandomizedAnswer(triviaData: TriviaData, index: Int) -> TriviaAnswer {
-        return triviaData.randomizedAnswers[index]
-    }
-
-    func setCheckmark(triviaData: TriviaData, index: Int) {
-        
-        for i in 0..<triviaData.randomizedAnswers.count {
-            if (i == index) {
-                triviaData.randomizedAnswers[i].checked = true
-            } else {
-                triviaData.randomizedAnswers[i].checked = false
+        if triviaModel!.firstGuess {
+            
+            if triviaModel?.isAnswerCorrect() ?? false {
+                
+                triviaModel?.adjustCounter(correctAnswer: 1, incorrectAnswer: 0 )
+                correctCountLabel.text = triviaModel?.getCorrectCount()
+                
+                //            let alert = UIAlertController(title: "Correct!", message: "You are sooo SMART!", preferredStyle: .alert)
+                //
+                //            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+                //            self.present(alert, animated: true)
+            }
+            else {
+                triviaModel?.adjustCounter(correctAnswer: 0, incorrectAnswer: 1 )
+                incorrectCountLabel.text = triviaModel?.getIncorrectCount()
+                //            let alert = UIAlertController(title: "Wrong Answer :(", message: "Try again, or get a new question.", preferredStyle: .alert)
+                //
+                //            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+                //            self.present(alert, animated: true)
             }
         }
-    }
-
-    func isAnswerCorrect(triviaData: TriviaData) {
         
-        for triviaAnswer in triviaData.randomizedAnswers {
-            if triviaAnswer.checked == true {
-                if (triviaAnswer.isCorrect == true) {
-                    let alert = UIAlertController(title: "Correct!", message: "You are sooo SMART!", preferredStyle: .alert)
-                    
-                    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-                    
-                    self.present(alert, animated: true)
-                }
-                else {
-                    let alert = UIAlertController(title: "Wrong Answer :(", message: "Try again, or get a new question.", preferredStyle: .alert)
-                    
-                    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-                    
-                    self.present(alert, animated: true)
-
-                }
-            }
-        }
     }
     
-    func getAnswerCount(triviaData: TriviaData) -> Int {
-        // There are 1 or more incorrect answers and only 1 correct answer
-        return triviaData.incorrect.count + 1
-    }
 }
 
+extension TriviaViewController: TriviaDataManagerDelegate {
+    func dataUpdated() {
+        // triggered when we:
+        //  1 get a new question - either from fetch or iterating list
+        //  2 reset game - so counters go back to zero
+        questionLabel.text = triviaModel?.getQuestion()?.question
+        correctCountLabel.text = triviaModel?.getCorrectCount()
+        incorrectCountLabel.text = triviaModel?.getIncorrectCount()
+        
+        triviaTableView.reloadData()
+    }
+    
+    
+}
+
+////////////////////////   Table Functions /////////////////////////////////////////
 extension TriviaViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // handle selecting a row for editing
-    // Update the model with the selected row and checkmark
-    // call to reloadTable -- read the model and set cell appropriately
     
     // returns the table cell at the specified row
     guard let cell = triviaTableView.cellForRow(at: IndexPath(row: indexPath.row, section: 0)) as? TriviaTableViewCell else {
             return
         }
-
-    setCheckmark(triviaData: triviaDataList[0], index: indexPath.row)
+    // Update the model with the selected row and checkmark
+    triviaModel?.setCheckmark(index: indexPath.row)
+    // update the counters
+    updateCounters()
+    // set the firstGuess to false
+    triviaModel?.firstGuess = false
+    // call to reloadTable -- read the model and set cell appropriately
     triviaTableView.reloadData()
     }
 }
@@ -128,12 +127,12 @@ extension TriviaViewController: UITableViewDelegate {
 extension TriviaViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // all items in our shopping list
+        // all incorrect/correct answers
         if section == 0 {
-            guard let triviaData = getQuestion(index: 0) else {
+            guard let answerCount = triviaModel?.getAnswerCount() else {
                 return 0
             }
-            return getAnswerCount(triviaData: triviaData)
+            return answerCount
         } else if section == 1 {
             return 1
         }
@@ -152,26 +151,21 @@ extension TriviaViewController: UITableViewDataSource {
                 return UITableViewCell()
             }
             
-            let triviaAnswer = getRandomizedAnswer(triviaData: triviaDataList[0], index: indexPath.row)
+            guard let triviaAnswer = triviaModel?.getRandomizedAnswer(index: indexPath.row) else {
+                return UITableViewCell()
+            }
             cell.textLabel?.text = triviaAnswer.answer
             cell.accessoryType =  triviaAnswer.checked ? .checkmark : .none
             
-//            // title = trivia correct and incorrect names
-//            if indexPath.row == 0 {
-//                cell.textLabel?.text = getCorrectAnswer(triviaData: triviaDataList[0])
-//            }
-//            else
-//            {
-//                let incorrectAnswers = getInCorrectAnswers(triviaData: triviaDataList[0])
-//                cell.textLabel?.text = incorrectAnswers[indexPath.row-1]
-//           }
-            
-            
-            // retrieve the grocery item for this index path
-//            let groceryItem: GroceryItem? = model?.cartItemFor(row: indexPath.row)
-//
-//            cell.decorateCell(with: groceryItem)
-//
+            if triviaAnswer.checked {
+                if triviaModel!.isAnswerCorrect() {
+                    cell.backgroundColor = UIColor.green
+                } else {
+                    cell.backgroundColor = UIColor.red
+                }
+            } else {
+                cell.backgroundColor = UIColor.white
+            }
             
             return cell
         }

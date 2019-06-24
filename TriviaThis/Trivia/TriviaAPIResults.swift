@@ -94,27 +94,30 @@ struct TriviaQuery : Codable, Hashable, Query {
     let query: String
     // an comma separated list of ingredients
     var amount: Int
-    var category: String
+    var categoryID: Int
     var difficulty: String
     var type: String
+    var encode: String
     
     init()
     {
         self.query = ""
         self.amount = 10
-        self.category = ""
+        self.categoryID = 0
         self.difficulty = ""
         self.type = ""
+        self.encode = "url3986"
     }
     
     // Long string comma separated
-    init(query: String, amount: Int, category: String, difficulty: String, type: String)
+    init(query: String, amount: Int, categoryID: Int, difficulty: String, type: String, encode: String)
     {
         self.query = query
         self.amount = amount
-        self.category = category
+        self.categoryID = categoryID
         self.difficulty = difficulty
         self.type = type
+        self.encode = encode
     }
     
     // query = http://recipepuppy.com/api/?i=onions,garic&q=omlet&p=3
@@ -134,17 +137,25 @@ struct TriviaQuery : Codable, Hashable, Query {
         myString += "amount="
         myString += "\(amount)"
         
-        if !category.isEmpty  {
-            myString = "&"
-            myString += category
+        //If category is not ANY
+        if categoryID != 0  {
+            myString += "&"
+            myString += "category=\(categoryID)"
         }
         if !difficulty.isEmpty {
-            myString = "&"
+            myString += "&"
+            myString += "difficulty="
             myString += difficulty
         }
         if !type.isEmpty {
-            myString = "&"
+            myString += "&"
+            myString += "type="
             myString += type
+        }
+        if !encode.isEmpty {
+            myString += "&"
+            myString += "encode="
+            myString += encode
         }
         return myString
     }

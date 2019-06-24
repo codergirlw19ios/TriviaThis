@@ -37,12 +37,7 @@ class TriviaNetwork: URLNetworkProtocol {
         // for each TriviaResult -- instantiate a TriviaData Object using result
         return results.map { TriviaData(result: $0)}
     }
-    // ? begins query
-    // i begins comma separated list of ingredients
-    // q begins the query string
-    // p begins the page integer
-    // & sparages teh query parameters
-    // query = http://recipepuppy.com/api/?i=onions,garic&q=omlet&p=3
+    
     //  The baseURL is appended in the URLNetwork fetch function
     func fetch(with query: TriviaQuery, completion: @escaping ([TriviaData]?) -> ()) {
         network.fetch(with: query) { [weak self] optionalRecipeSearchResult in completion(self?.result(from: optionalRecipeSearchResult))
