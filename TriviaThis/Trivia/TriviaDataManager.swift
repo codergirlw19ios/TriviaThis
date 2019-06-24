@@ -57,6 +57,26 @@ class TriviaDataManager {
         self.answerCount = ac
     }
     
+    func fetchQuestions() {
+        
+        // Do we need to fetch new data or just iterate the list??
+        if (triviaDataList.count == 0) || (questionIndex >= triviaDataList.count) || forceFetch == true {
+            // call with triviaQuery so the correct verions of fetch is called
+            triviaNetwork.fetch(with: (triviaQuery)){
+                optionalTriviaArray in
+                self.triviaDataList = optionalTriviaArray ?? [TriviaData]()
+            }
+            // reset the questionIndex
+            questionIndex = 0
+            // reset the forceFetch
+            forceFetch = false
+        } else {  // data is there -- go to next index
+            questionIndex += 1
+        }
+        // This is the first guess for this question , so count the answer
+        firstGuess = true
+    }
+    
     // get the question at the specified index
     func getQuestion() -> TriviaData? {
         
@@ -129,6 +149,20 @@ class TriviaDataManager {
         let count = answerCount.totalIncorrect
         return "\(count)"
     }
+    
+    func resetGame() {
+        answerCount.reset()
+        questionIndex = 0
+        triviaDataList.removeAll()
+        // first guess for this question
+        firstGuess = true
+        forceFetch = false
+        // write the data to the file
+        persistence.writeAnswerCount(answerCount)
+        // notify whoever is listening that we modified data to this object
+        self.delegate?.dataUpdated()
+    }
+    
     func resetCounters() {
         answerCount.reset()
         // write the data to the file

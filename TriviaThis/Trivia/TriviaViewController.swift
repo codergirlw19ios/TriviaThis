@@ -10,6 +10,7 @@ import UIKit
 
 class TriviaViewController: UIViewController {
 
+    
     var triviaModel:  TriviaDataManager?
     
     @IBOutlet weak var incorrectCountLabel: UILabel!
@@ -19,32 +20,21 @@ class TriviaViewController: UIViewController {
     
  
     // There are 10 questions fetched each time.  Do we get new data or do we iterate to next question?
-    @IBAction func getTriviaQuestion(_ sender: Any) {
+    @IBAction func getNextQuestion(_ sender: Any) {
     
         guard triviaModel != nil else {
             return
         }
-        // Do we need to fetch new data or just iterate the list??
-        if (triviaModel!.triviaDataList.count == 0) || (triviaModel!.questionIndex >= triviaModel!.triviaDataList.count) || triviaModel!.forceFetch == true {
-            // call with triviaQuery so the correct verions of fetch is called
-            triviaModel?.triviaNetwork.fetch(with: (triviaModel?.triviaQuery)!){
-                optionalTriviaArray in
-                self.triviaModel?.triviaDataList = optionalTriviaArray ?? [TriviaData]()
-            }
-            // reset the questionIndex
-            triviaModel?.questionIndex = 0
-            // reset the forceFetch
-            triviaModel?.forceFetch = false
-        } else {  // data is there -- go to next index
-            triviaModel?.questionIndex += 1
-        }
         
-        triviaModel?.firstGuess = true
+        triviaModel?.fetchQuestions()
+        
     }
-    
-    @IBAction func submitAnswerTapped(_ sender: Any) {
+    @IBAction func newGameTapped(_ sender: Any) {
+         triviaModel?.resetGame()
+    }
+    override func viewDidAppear(_ animated: Bool) {
         
-        updateCounters()
+
     }
     
     override func viewDidLoad() {

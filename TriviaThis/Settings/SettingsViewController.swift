@@ -35,15 +35,14 @@ class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.navigationItem.title = "Trivia This!"
         categoryPickerView.delegate = self
         categoryPickerView.dataSource = self
         difficultyPickerView.delegate = self
         difficultyPickerView.dataSource = self
     }
     
-    @IBAction func newGameTapped(_ sender: Any) {
-        triviaModel?.resetCounters()
-    }
+    
     /*
     // MARK: - Navigation
 
@@ -64,6 +63,7 @@ extension SettingsViewController: UIPickerViewDelegate {
         } else {
             triviaModel?.setSelectedCategory(category: categories[row])
         }
+        triviaModel?.resetGame()
     }
 }
 
